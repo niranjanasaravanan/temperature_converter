@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Temperature Converter</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0d0d;
+      --surface: #161616;
+      --surface2: #1f1f1f;
+      --border: #2e2e2e;
+      --accent: #f0c040;
+      --accent-dim: rgba(240,192,64,0.12);
+      --text: #f0ede8;
+      --muted: #6b6b6b;
+      --danger: #e85c5c;
+      --success: #5ce8a0;
+      --font-display: 'Syne', sans-serif;
+      --font-mono: 'DM Mono', monospace;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(240,192,64,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(240,192,64,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    header {
+      margin-bottom: 2.5rem;
+    }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 6vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    h1 span {
+      color: var(--accent);
+    }
+
+    /* Card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      position: relative;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: 32px;
+      right: 32px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 0 0 4px 4px;
+    }
+
+    /* Unit selector */
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .unit-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1.75rem;
+    }
+
+    .unit-btn {
+      flex: 1;
+      padding: 10px 4px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      text-align: center;
+    }
+
+    .unit-btn .sym {
+      display: block;
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 2px;
+      transition: color 0.18s;
+    }
+
+    .unit-btn:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .unit-btn:hover .sym { color: var(--accent); }
+
+    .unit-btn.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .unit-btn.active .sym {
+      color: var(--accent);
+    }
+
+    /* Input */
+    .input-wrap {
+      position: relative;
+      margin-bottom: 0.4rem;
+    }
+
+    .temp-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 60px 14px 18px;
+      font-family: var(--font-mono);
+      font-size: 24px;
+      font-weight: 500;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.18s, box-shadow 0.18s;
+      appearance: textfield;
+      -moz-appearance: textfield;
+    }
+
+    .temp-input::-webkit-outer-spin-button,
+    .temp-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    .temp-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(240,192,64,0.12);
+    }
+
+    .temp-input.error {
+      border-color: var(--danger);
+      box-shadow: 0 0 0 3px rgba(232,92,92,0.12);
+    }
+
+    .input-unit-tag {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 18px;
+      color: var(--accent);
+      font-weight: 500;
+      pointer-events: none;
+    }
+
+    .error-text {
+      font-size: 12px;
+      color: var(--danger);
+      min-height: 18px;
+      margin-bottom: 1.25rem;
+      padding-left: 4px;
+    }
+
+    /* Convert button */
+    .convert-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 700;
+      color: #0d0d0d;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: transform 0.12s ease, opacity 0.15s;
+      margin-bottom: 1.75rem;
+    }
+
+    .convert-btn:hover { opacity: 0.88; }
+    .convert-btn:active { transform: scale(0.98); }
+
+    /* Result */
+    .result-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: border-color 0.2s;
+    }
+
+    .result-box.has-result {
+      border-color: rgba(240,192,64,0.3);
+    }
+
+    .result-placeholder {
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .result-from {
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .result-primary {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .result-num {
+      font-family: var(--font-display);
+      font-size: 40px;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .result-unit-label {
+      font-size: 15px;
+      color: var(--muted);
+    }
+
+    .result-others {
+      display: flex;
+      gap: 20px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .other-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .other-label {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .other-val {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    /* Shake animation */
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+
+    .shake { animation: shake 0.35s ease; }
+
+    /* Pop in */
+    @keyframes popIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .pop { animation: popIn 0.25s ease forwards; }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+  <header>
+    <p class="eyebrow">// utility tool</p>
+    <h1>Temp<span>erature</span><br>Converter</h1>
+  </header>
+
+  <div class="card">
+
+    <p class="section-label">Input unit</p>
+    <div class="unit-row">
+      <button class="unit-btn active" data-unit="C" onclick="selectUnit(this)">
+        <span class="sym">°C</span>Celsius
+      </button>
+      <button class="unit-btn" data-unit="F" onclick="selectUnit(this)">
+        <span class="sym">°F</span>Fahrenheit
+      </button>
+      <button class="unit-btn" data-unit="K" onclick="selectUnit(this)">
+        <span class="sym">K</span>Kelvin
+      </button>
+    </div>
+
+    <p class="section-label">Enter temperature</p>
+    <div class="input-wrap">
+      <input class="temp-input" type="number" id="tempInput"
+        placeholder="0"
+        oninput="clearError()"
+        onkeydown="if(event.key==='Enter') convert()" />
+      <span class="input-unit-tag" id="inputUnitTag">°C</span>
+    </div>
+    <p class="error-text" id="errMsg"></p>
+
+    <button class="convert-btn" onclick="convert()">Convert →</button>
+
+    <div class="result-box" id="resultBox">
+      <p class="result-placeholder">Enter a value and press Convert</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let selectedUnit = 'C';
+  const unitSymbols = { C: '°C', F: '°F', K: 'K' };
+  const unitNames   = { C: 'Celsius', F: 'Fahrenheit', K: 'Kelvin' };
+
+  function selectUnit(btn) {
+    document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedUnit = btn.dataset.unit;
+    document.getElementById('inputUnitTag').textContent = unitSymbols[selectedUnit];
+    clearError();
+    resetResult();
+  }
+
+  function clearError() {
+    const inp = document.getElementById('tempInput');
+    inp.classList.remove('error');
+    document.getElementById('errMsg').textContent = '';
+  }
+
+  function resetResult() {
+    const box = document.getElementById('resultBox');
+    box.classList.remove('has-result');
+    box.innerHTML = '<p class="result-placeholder">Enter a value and press Convert</p>';
+  }
+
+  function toC(val, from) {
+    if (from === 'C') return val;
+    if (from === 'F') return (val - 32) * 5 / 9;
+    if (from === 'K') return val - 273.15;
+  }
+
+  function fmt(n) {
+    return parseFloat(n.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
+  function convert() {
+    const input = document.getElementById('tempInput');
+    const raw = input.value.trim();
+
+    if (raw === '' || isNaN(Number(raw))) {
+      showError(input, 'Please enter a valid number.');
+      return;
+    }
+
+    const val = parseFloat(raw);
+
+    if (selectedUnit === 'K' && val < 0) {
+      showError(input, 'Kelvin cannot be negative — absolute zero is 0 K.');
+      return;
+    }
+    if (selectedUnit === 'C' && val < -273.15) {
+      showError(input, 'Below absolute zero (−273.15 °C).');
+      return;
+    }
+    if (selectedUnit === 'F' && val < -459.67) {
+      showError(input, 'Below absolute zero (−459.67 °F).');
+      return;
+    }
+
+    const celsius = toC(val, selectedUnit);
+    const allResults = {
+      C: celsius,
+      F: celsius * 9 / 5 + 32,
+      K: celsius + 273.15
+    };
+
+    const others = ['C', 'F', 'K'].filter(u => u !== selectedUnit);
+    const primary = others[0];
+    const secondary = others[1];
+
+    const box = document.getElementById('resultBox');
+    box.classList.add('has-result');
+    box.innerHTML = `
+      <p class="result-from pop">from ${fmt(val)} ${unitSymbols[selectedUnit]} (${unitNames[selectedUnit]})</p>
+      <div class="result-primary pop">
+        <span class="result-num">${fmt(allResults[primary])}</span>
+        <span class="result-unit-label">${unitSymbols[primary]} &nbsp;${unitNames[primary]}</span>
+      </div>
+      <div class="result-others pop">
+        <div class="other-item">
+          <span class="other-label">${unitNames[secondary]}</span>
+          <span class="other-val">${fmt(allResults[secondary])} ${unitSymbols[secondary]}</span>
+        </div>
+        <div class="other-item">
+          <span class="other-label">All three</span>
+          <span class="other-val">${fmt(allResults['C'])}°C &nbsp;·&nbsp; ${fmt(allResults['F'])}°F &nbsp;·&nbsp; ${fmt(allResults['K'])} K</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function showError(input, msg) {
+    input.classList.add('error');
+    input.classList.add('shake');
+    document.getElementById('errMsg').textContent = msg;
+    setTimeout(() => input.classList.remove('shake'), 400);
+  }
+</script>
+
+</body>
+</html>
